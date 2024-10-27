@@ -2,7 +2,7 @@
 
 **Code Path Tracker** is a Chrome extension designed to track the function calls in code browsing tools like OpenGrok. By recording each clicked function in a custom history, Code Path Tracker helps developers better understand code flows and improves code review efficiency.
 
-![Code Path Tracker](TODO)
+![Code Path Tracker](https://github.com/pkaiy81/Code-Path-Tracker/blob/main/images/Code_Path_Tracker_Promotional_1280x800.png)
 
 ## Features
 
