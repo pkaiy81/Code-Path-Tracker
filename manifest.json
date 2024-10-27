@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Code Path Tracker",
+    "version": "1.0.0",
+    "default_locale": "en",
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "storage",
+        "scripting"
+    ],
+    "options_page": "options.html",
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "content_script.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+{
+    "description": {
+        "message": "Code Path Tracker is a Google Chrome extension for OpenGrok and similar source code browsing sites that allows you to track clicked functions in history and copy them using a custom template. This extension is a powerful tool for efficient code review, enabling deeper understanding of code flows by tracking functions in history.\n\nKey Features:\n- Automatically add clicked functions to history\n- Manage function history in a sidebar (adjust hierarchy, delete, copy, and edit URLs)\n- Customize templates, indentation, and URL inclusion through settings\n- Activate the extension only on specific sites by specifying URL patterns\n\nEnhance your code reviews with Code Path Tracker and streamline your workflow!"
+    }
+}
