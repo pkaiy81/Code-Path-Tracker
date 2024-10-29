@@ -10,11 +10,15 @@
         "storage",
         "scripting"
     ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
     "icons": {
         "16": "images/Code_Path_Tracker_Icon_16.png",
         "48": "images/Code_Path_Tracker_Icon_48.png",
         "128": "images/Code_Path_Tracker_Icon_128.png"
-    },    
+    },
     "options_page": "options.html",
     "background": {
         "service_worker": "background.js"
