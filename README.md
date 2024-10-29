@@ -45,9 +45,10 @@ Available options:
 ## Contributing
 
 We welcome contributions! To contribute:
+Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines.
 
 1. Fork this repository.
-2. Create a new branch (`git checkout -b feature/YourFeatureName`).
+2. Create a new branch (`git checkout -b feature/YourFeatureName`) from `develop`.
 3. Commit your changes (`git commit -am 'Add new feature'`).
 4. Push to the branch (`git push origin feature/YourFeatureName`).
 5. Create a new Pull Request.
