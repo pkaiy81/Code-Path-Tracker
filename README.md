@@ -14,7 +14,7 @@
 ## Installation
 
 1. **From Chrome Web Store** (recommended):
-   - Visit the [Code Path Tracker Chrome Web Store page](TODO) and click **Add to Chrome** to install the extension.
+   - Visit the [Code Path Tracker Chrome Web Store page](https://chrome.google.com/webstore/detail/gkmkibihhikknnimgnpenggkkomljpid) and click **Add to Chrome** to install the extension.
 
 2. **From Source** (for development):
    - Clone or download this repository to your local machine.
