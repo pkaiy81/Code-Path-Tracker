@@ -1,105 +1,111 @@
 // options.js
 
 document.addEventListener("DOMContentLoaded", () => {
+  const enclosingLineInput = document.getElementById("enclosingLine");
+  const arrowInput = document.getElementById("arrow");
+  const indentationInput = document.getElementById("indentation");
+  const includeLinksInput = document.getElementById("includeLinks");
+  const activeUrlsInput = document.getElementById("activeUrls");
+  const activeUrlsError = document.getElementById("activeUrlsError");
+  const statusMessage = document.getElementById("statusMessage");
+
   // Load the saved settings
   chrome.storage.sync.get(
-    [
-      "enclosingLine",
-      "arrow",
-      "indentation",
-      "includeLinks",
-      //   "showSidebar",
-      "activeUrls",
-    ],
+    ["enclosingLine", "arrow", "indentation", "includeLinks", "activeUrls"],
     (data) => {
-      document.getElementById("enclosingLine").value =
-        data.enclosingLine || "--------------------";
-      document.getElementById("arrow").value = data.arrow || "+->";
-      document.getElementById("indentation").value =
-        data.indentation !== undefined ? data.indentation : 2;
-      document.getElementById("includeLinks").checked =
-        data.includeLinks !== false; // default is true
-      //   document.getElementById("showSidebar").checked =
-      // data.showSidebar !== false; // default is true
-      document.getElementById("activeUrls").value = data.activeUrls
-        ? data.activeUrls.join("\n")
-        : "";
+      enclosingLineInput.value = data.enclosingLine || "--------------------";
+      arrowInput.value = data.arrow || "+->";
+      indentationInput.value = data.indentation !== undefined ? data.indentation : 2;
+      includeLinksInput.checked = data.includeLinks !== false; // default is true
+      activeUrlsInput.value = data.activeUrls ? data.activeUrls.join("\n") : "";
 
-      // Update the preview
       updatePreview();
+      clearStatus();
     }
   );
 
-  // Save the settings
   document.getElementById("save").addEventListener("click", () => {
-    const enclosingLine = document.getElementById("enclosingLine").value;
-    const arrow = document.getElementById("arrow").value;
-    const indentation = parseInt(
-      document.getElementById("indentation").value,
-      10
-    );
-    const includeLinks = document.getElementById("includeLinks").checked;
-    // const showSidebar = document.getElementById("showSidebar").checked;
-    const activeUrlsInput = document.getElementById("activeUrls").value;
-    const activeUrls = activeUrlsInput
+    clearFieldError();
+
+    const enclosingLine = enclosingLineInput.value;
+    const arrow = arrowInput.value;
+    const indentationValue = parseInt(indentationInput.value, 10);
+    const indentation = Number.isFinite(indentationValue)
+      ? Math.max(0, indentationValue)
+      : 2;
+    const includeLinks = includeLinksInput.checked;
+    const activeUrls = activeUrlsInput.value
       .split("\n")
       .map((url) => url.trim())
       .filter((url) => url.length > 0);
 
-    // Validate URL patterns
     const invalidPatterns = activeUrls.filter((url) => !isValidUrlPattern(url));
     if (invalidPatterns.length > 0) {
-      alert(`Invalid URL patterns:\n${invalidPatterns.join("\n")}`);
+      showFieldError(
+        `Invalid URL pattern(s): ${invalidPatterns.join(", ")}. Please use valid URLs, e.g., https://example.com/*`
+      );
+      showStatus("Could not save settings.", "error");
       return;
     }
 
+    indentationInput.value = indentation;
+
     chrome.storage.sync.set(
       {
-        enclosingLine: enclosingLine,
-        arrow: arrow,
-        indentation: indentation,
-        includeLinks: includeLinks,
-        // showSidebar: showSidebar,
-        activeUrls: activeUrls,
+        enclosingLine,
+        arrow,
+        indentation,
+        includeLinks,
+        activeUrls,
       },
       () => {
-        // Send message to background script after saving settings
-        chrome.runtime.sendMessage({ type: "settings_updated" }, (response) => {
+        chrome.runtime.sendMessage({ type: "settings_updated" }, () => {
           if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError.message);
-            alert("An error occurred while saving settings.");
+            showStatus("An error occurred while saving settings.", "error");
           } else {
-            alert("Settings have been saved.");
+            showStatus("Settings saved.", "success");
           }
         });
       }
     );
   });
 
-  // Update the preview when settings change
-  document
-    .getElementById("enclosingLine")
-    .addEventListener("input", updatePreview);
-  document.getElementById("arrow").addEventListener("input", updatePreview);
-  document
-    .getElementById("indentation")
-    .addEventListener("input", updatePreview);
-  document
-    .getElementById("includeLinks")
-    .addEventListener("change", updatePreview);
-  document
-    .getElementById("activeUrls")
-    .addEventListener("input", updatePreview);
+  enclosingLineInput.addEventListener("input", updatePreview);
+  arrowInput.addEventListener("input", updatePreview);
+  indentationInput.addEventListener("input", updatePreview);
+  includeLinksInput.addEventListener("change", updatePreview);
+  activeUrlsInput.addEventListener("input", () => {
+    clearFieldError();
+    updatePreview();
+  });
 
-  // Function to update the preview
+  function showStatus(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = `status ${type || ""}`.trim();
+  }
+
+  function clearStatus() {
+    statusMessage.textContent = "";
+    statusMessage.className = "status";
+  }
+
+  function showFieldError(message) {
+    activeUrlsError.textContent = message;
+    activeUrlsError.classList.add("visible");
+  }
+
+  function clearFieldError() {
+    activeUrlsError.textContent = "";
+    activeUrlsError.classList.remove("visible");
+  }
+
   function updatePreview() {
-    const enclosingLine = document.getElementById("enclosingLine").value || "";
-    const arrow = document.getElementById("arrow").value || "";
-    const indentation =
-      parseInt(document.getElementById("indentation").value, 10) || 0;
-    const includeLinks = document.getElementById("includeLinks").checked;
+    const enclosingLine = enclosingLineInput.value || "";
+    const arrow = arrowInput.value || "";
+    const indentation = parseInt(indentationInput.value, 10) || 0;
+    const includeLinks = includeLinksInput.checked;
 
-    // Sample function history for preview
     const functionHistory = [
       { name: "demo()", link: "http://example.com/demo", level: 0 },
       { name: "test()", link: "http://example.com/test", level: 1 },
@@ -119,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("preview").textContent = previewText;
   }
 
-  // Function to generate preview text
   function generatePreviewText(
     functionHistory,
     enclosingLine,
@@ -131,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formatted += enclosingLine + "\n";
 
     functionHistory.forEach((func) => {
-      const indent = "  ".repeat(indentation * func.level);
+      const indent = " ".repeat(indentation * func.level);
       const arrowSymbol = arrow || "+->";
       const name =
         includeLinks && func.link ? `${func.name} (${func.link})` : func.name;
@@ -146,10 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return formatted;
   }
 
-  // Function to validate URL patterns
   function isValidUrlPattern(pattern) {
     try {
-      // Replace wildcard with a placeholder
       const testUrl = pattern.replace(/\*/g, "example");
       new URL(testUrl);
       return true;
