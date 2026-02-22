@@ -91,6 +91,15 @@ function checkIfAllowed() {
       chrome.storage.local.set({ sidebarMinimized: isSidebarMinimized });
     }
 
+    function updateMinimizeButtonAccessibility(button) {
+      if (!button) return;
+      button.setAttribute("aria-expanded", String(!isSidebarMinimized));
+      button.setAttribute(
+        "aria-label",
+        isSidebarMinimized ? "Expand sidebar" : "Minimize sidebar"
+      );
+    }
+
     function generateUniqueId() {
       return "id-" + Math.random().toString(36).substr(2, 16);
     }
@@ -129,7 +138,8 @@ function checkIfAllowed() {
         sidebar.appendChild(resizeHandle);
       }
 
-      const { header, copyButton, clearButton } = buildHeader();
+      const { header, copyButton, clearButton, exportButton, importButton } =
+        buildHeader();
       sidebar.appendChild(header);
 
       copyButton.addEventListener("click", () => {
@@ -144,6 +154,9 @@ function checkIfAllowed() {
           showTemporaryMessage("All history cleared.");
         }
       });
+
+      exportButton.addEventListener("click", exportHistory);
+      importButton.addEventListener("click", triggerImportHistory);
 
       const listContainer = buildHistoryList();
 
@@ -166,17 +179,29 @@ function checkIfAllowed() {
       copyButton.textContent = "Copy";
       copyButton.title = "Copy Formatted History";
 
+      const exportButton = document.createElement("button");
+      exportButton.className = "cpt-btn";
+      exportButton.textContent = "Export";
+      exportButton.title = "Export History";
+
+      const importButton = document.createElement("button");
+      importButton.className = "cpt-btn";
+      importButton.textContent = "Import";
+      importButton.title = "Import History";
+
       const clearButton = document.createElement("button");
       clearButton.className = "cpt-btn";
       clearButton.textContent = "Clear All";
       clearButton.title = "Clear All History";
 
       buttonsContainer.appendChild(copyButton);
+      buttonsContainer.appendChild(exportButton);
+      buttonsContainer.appendChild(importButton);
       buttonsContainer.appendChild(clearButton);
       header.appendChild(title);
       header.appendChild(buttonsContainer);
 
-      return { header, copyButton, clearButton };
+      return { header, copyButton, clearButton, exportButton, importButton };
     }
 
     function buildHistoryList() {
@@ -300,6 +325,7 @@ function checkIfAllowed() {
         sidebar.style.overflowY = "hidden";
         button.textContent = "▶";
         button.style.right = "35px";
+        updateMinimizeButtonAccessibility(button);
         return;
       }
 
@@ -309,6 +335,7 @@ function checkIfAllowed() {
       sidebar.style.overflowY = "auto";
       button.textContent = "▼";
       button.style.right = `${sidebarWidth + 5}px`;
+      updateMinimizeButtonAccessibility(button);
     }
 
     function createHistorySidebar() {
@@ -316,6 +343,8 @@ function checkIfAllowed() {
       sidebar.id = "function-history-sidebar";
       sidebar.className = "cpt-sidebar";
       sidebar.style.width = `${sidebarWidth}px`;
+      sidebar.setAttribute("role", "complementary");
+      sidebar.setAttribute("aria-label", "Function History Sidebar");
 
       document.body.appendChild(sidebar);
 
@@ -325,6 +354,7 @@ function checkIfAllowed() {
       minimizeButton.id = "minimize-sidebar-button";
       minimizeButton.className = "cpt-minimize-button cpt-btn";
       minimizeButton.style.right = `${sidebarWidth + 5}px`;
+      minimizeButton.setAttribute("aria-controls", "function-history-sidebar");
 
       document.body.appendChild(minimizeButton);
 
@@ -337,6 +367,12 @@ function checkIfAllowed() {
 
       attachResizeEventListeners(resizeHandle, minimizeButton);
       attachControlEventListeners();
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !isSidebarMinimized) {
+          toggleSidebarMinimize();
+        }
+      });
     }
 
     // Function to attach event listeners to control buttons
@@ -726,6 +762,83 @@ function checkIfAllowed() {
       }
 
       document.body.removeChild(textArea);
+    }
+
+    function exportHistory() {
+      try {
+        const payload = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          functionHistory,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {
+          type: "application/json",
+        });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `code-path-history-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+        showTemporaryMessage("History exported.");
+      } catch (error) {
+        console.error("Failed to export history:", error);
+        showTemporaryMessage("Failed to export history.");
+      }
+    }
+
+    function triggerImportHistory() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "application/json";
+
+      input.addEventListener("change", async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        try {
+          const content = await file.text();
+          const parsed = JSON.parse(content);
+          const importedHistory = Array.isArray(parsed)
+            ? parsed
+            : parsed.functionHistory;
+
+          if (!Array.isArray(importedHistory)) {
+            throw new Error("Invalid format");
+          }
+
+          const normalized = importedHistory.map((item) => ({
+            id: item.id || generateUniqueId(),
+            name: String(item.name || ""),
+            link: item.link ? String(item.link) : null,
+            level: Number.isInteger(item.level) && item.level >= 0 ? item.level : 0,
+          }));
+
+          if (normalized.some((item) => item.name.length === 0)) {
+            throw new Error("Invalid function name");
+          }
+
+          if (
+            !confirm(
+              `Import ${normalized.length} history items and replace the current history?`
+            )
+          ) {
+            return;
+          }
+
+          functionHistory = normalized;
+          saveHistory();
+          updateHistoryDisplay();
+          showTemporaryMessage("History imported.");
+        } catch (error) {
+          console.error("Failed to import history:", error);
+          showTemporaryMessage("Invalid import file.");
+        }
+      });
+
+      input.click();
     }
 
     function isValidUrlPattern(pattern) {
