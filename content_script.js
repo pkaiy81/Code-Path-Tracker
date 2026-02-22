@@ -39,10 +39,11 @@ function checkIfAllowed() {
     let enclosingLine = "--------------------";
     let sidebarWidth = 350;
 
-    // Load settings and sidebar width
+    // Load settings and sidebar state
     loadSettings().then(() => {
-      chrome.storage.local.get(["sidebarWidth"], (data) => {
+      chrome.storage.local.get(["sidebarWidth", "sidebarMinimized"], (data) => {
         sidebarWidth = data.sidebarWidth || 350;
+        isSidebarMinimized = data.sidebarMinimized === true;
         createHistorySidebar();
         injectStyles();
         loadHistory();
@@ -84,6 +85,10 @@ function checkIfAllowed() {
 
     function saveSidebarWidth() {
       chrome.storage.local.set({ sidebarWidth });
+    }
+
+    function saveSidebarMinimizedState() {
+      chrome.storage.local.set({ sidebarMinimized: isSidebarMinimized });
     }
 
     function generateUniqueId() {
@@ -285,6 +290,28 @@ function checkIfAllowed() {
 
     let isSidebarMinimized = false;
 
+    function applySidebarState(minimizeButton) {
+      const button = minimizeButton || document.getElementById("minimize-sidebar-button");
+      if (!sidebar || !button) return;
+
+      if (isSidebarMinimized) {
+        sidebar.style.width = "0px";
+        sidebar.style.padding = "5px";
+        sidebar.style.overflow = "hidden";
+        sidebar.style.overflowY = "hidden";
+        button.textContent = "▶";
+        button.style.right = "35px";
+        return;
+      }
+
+      sidebar.style.width = `${sidebarWidth}px`;
+      sidebar.style.padding = "10px";
+      sidebar.style.overflow = "";
+      sidebar.style.overflowY = "auto";
+      button.textContent = "▼";
+      button.style.right = `${sidebarWidth + 5}px`;
+    }
+
     function createHistorySidebar() {
       sidebar = document.createElement("div");
       sidebar.id = "function-history-sidebar";
@@ -320,6 +347,7 @@ function checkIfAllowed() {
       document.body.appendChild(minimizeButton);
 
       minimizeButton.addEventListener("click", toggleSidebarMinimize);
+      applySidebarState(minimizeButton);
 
       const resizeHandle = document.createElement("div");
       resizeHandle.className = "resize-handle";
@@ -376,23 +404,9 @@ function checkIfAllowed() {
     }
 
     function toggleSidebarMinimize() {
-      const minimizeButton = document.getElementById("minimize-sidebar-button");
-
-      if (isSidebarMinimized) {
-        sidebar.style.width = `${sidebarWidth}px`;
-        sidebar.style.padding = "10px";
-        sidebar.style.overflowY = "auto";
-        minimizeButton.textContent = "▼";
-        minimizeButton.style.right = `${sidebarWidth + 5}px`;
-        isSidebarMinimized = false;
-      } else {
-        sidebar.style.width = "0px";
-        sidebar.style.padding = "5px";
-        sidebar.style.overflow = "hidden";
-        minimizeButton.textContent = "▶";
-        minimizeButton.style.right = "35px";
-        isSidebarMinimized = true;
-      }
+      isSidebarMinimized = !isSidebarMinimized;
+      saveSidebarMinimizedState();
+      applySidebarState();
     }
 
     function attachResizeEventListeners(handle, minimizeButton) {
@@ -408,9 +422,8 @@ function checkIfAllowed() {
         if (!isResizing) return;
         const newWidth = window.innerWidth - e.clientX;
         if (newWidth > 200 && newWidth < 600) {
-          sidebar.style.width = `${newWidth}px`;
-          minimizeButton.style.right = `${newWidth + 5}px`;
           sidebarWidth = newWidth;
+          applySidebarState(minimizeButton);
         }
       });
 
