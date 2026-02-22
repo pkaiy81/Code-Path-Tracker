@@ -2,61 +2,175 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Options</title>
+  <title>Code Path Tracker Settings</title>
   <style>
+    :root {
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --accent: #2563eb;
+      --success: #047857;
+      --error: #b91c1c;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
     }
+
+    .container {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 16px 32px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .description {
+      color: var(--muted);
+      margin-top: 0;
+    }
+
     label {
       display: block;
       margin-top: 10px;
+      font-weight: 600;
     }
+
+    input[type="text"],
+    input[type="number"],
     textarea {
       width: 100%;
-      height: 100px;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 6px;
+      font-size: 14px;
     }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+    }
+
+    .check-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 400;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      filter: brightness(0.95);
+    }
+
+    .status {
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .status.success {
+      color: var(--success);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .field-error {
+      margin-top: 6px;
+      color: var(--error);
+      font-size: 13px;
+      display: none;
+    }
+
+    .field-error.visible {
+      display: block;
+    }
+
     #preview {
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       padding: 10px;
       margin-top: 10px;
       white-space: pre-wrap;
-      background-color: #f9f9f9;
+      background-color: #f9fafb;
     }
   </style>
 </head>
 <body>
-  <h1>Extension Settings</h1>
-  
-  <label for="enclosingLine">Enclosing Line:
-    <input type="text" id="enclosingLine" placeholder="--------------------">
-  </label>
-  
-  <label for="arrow">Arrow:
-    <input type="text" id="arrow" placeholder="+->">
-  </label>
-  
-  <label for="indentation">Indentation (Number of Spaces):
-    <input type="number" id="indentation" min="0" value="2">
-  </label>
-  
-  <label>
-    <input type="checkbox" id="includeLinks"> Include URLs in Function Names
-  </label>
-  
-  <!-- <label>
-    <input type="checkbox" id="showSidebar"> Show Sidebar
-  </label> -->
-  
-  <label for="activeUrls">Enabled URLs (Enter each URL on a new line):
-    <textarea id="activeUrls" placeholder="https://opengrok.example.com/*\r\nhttps://specific-site.com/*"></textarea>
-  </label>
-  
-  <button id="save">Save</button>
-  
-  <h2>Preview</h2>
-  <pre id="preview"></pre>
-  
+  <div class="container">
+    <h1>Extension Settings</h1>
+    <p class="description">Customize formatting and choose which sites activate Code Path Tracker.</p>
+
+    <div class="card">
+      <h2>Format</h2>
+      <label for="enclosingLine">Enclosing Line
+        <input type="text" id="enclosingLine" placeholder="--------------------">
+      </label>
+
+      <label for="arrow">Arrow
+        <input type="text" id="arrow" placeholder="+->">
+      </label>
+
+      <label for="indentation">Indentation (number of spaces)
+        <input type="number" id="indentation" min="0" value="2">
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="includeLinks"> Include URLs in function names
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>Activation URLs</h2>
+      <label for="activeUrls">Enabled URLs (one per line)
+        <textarea id="activeUrls" placeholder="https://opengrok.example.com/*&#10;https://specific-site.com/*"></textarea>
+      </label>
+      <div id="activeUrlsError" class="field-error" role="alert"></div>
+    </div>
+
+    <div class="card">
+      <h2>Preview</h2>
+      <pre id="preview"></pre>
+      <div class="actions">
+        <button id="save">Save</button>
+        <div id="statusMessage" class="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
