@@ -380,20 +380,12 @@ function checkIfAllowed() {
 
     function toggleSidebarMinimize() {
       const minimizeButton = document.getElementById("minimize-sidebar-button");
+      if (!minimizeButton || !sidebar) return;
 
-      if (isSidebarMinimized) {
-        sidebar.style.width = `${sidebarWidth}px`;
-        sidebar.classList.toggle("is-minimized", false);
-        minimizeButton.textContent = "▼";
-        minimizeButton.style.right = `${sidebarWidth + 5}px`;
-        isSidebarMinimized = false;
-      } else {
-        sidebar.style.width = "0px";
-        sidebar.classList.toggle("is-minimized", true);
-        minimizeButton.textContent = "▶";
-        minimizeButton.style.right = "35px";
-        isSidebarMinimized = true;
-      }
+      isSidebarMinimized = !isSidebarMinimized;
+      sidebar.classList.toggle("is-minimized", isSidebarMinimized);
+      applySidebarState(minimizeButton);
+      saveSidebarMinimizedState();
     }
 
     function attachResizeEventListeners(handle, minimizeButton) {
