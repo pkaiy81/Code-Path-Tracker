@@ -29,7 +29,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const enclosingLine = enclosingLineInput.value;
     const arrow = arrowInput.value;
-    const indentation = parseInt(indentationInput.value, 10);
+    const indentationValue = parseInt(indentationInput.value, 10);
+    const indentation = Number.isFinite(indentationValue)
+      ? Math.max(0, indentationValue)
+      : 2;
     const includeLinks = includeLinksInput.checked;
     const activeUrls = activeUrlsInput.value
       .split("\n")
@@ -44,6 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
       showStatus("Could not save settings.", "error");
       return;
     }
+
+    indentationInput.value = indentation;
 
     chrome.storage.sync.set(
       {

@@ -38,6 +38,7 @@ function checkIfAllowed() {
     let arrow = "+->";
     let enclosingLine = "--------------------";
     let sidebarWidth = 350;
+    let hasAttachedGlobalKeyListener = false;
 
     // Load settings and sidebar state
     loadSettings().then(() => {
@@ -338,6 +339,12 @@ function checkIfAllowed() {
       updateMinimizeButtonAccessibility(button);
     }
 
+    function onGlobalKeyDown(event) {
+      if (event.key === "Escape" && !isSidebarMinimized) {
+        toggleSidebarMinimize();
+      }
+    }
+
     function createHistorySidebar() {
       sidebar = document.createElement("div");
       sidebar.id = "function-history-sidebar";
@@ -368,11 +375,10 @@ function checkIfAllowed() {
       attachResizeEventListeners(resizeHandle, minimizeButton);
       attachControlEventListeners();
 
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !isSidebarMinimized) {
-          toggleSidebarMinimize();
-        }
-      });
+      if (!hasAttachedGlobalKeyListener) {
+        document.addEventListener("keydown", onGlobalKeyDown);
+        hasAttachedGlobalKeyListener = true;
+      }
     }
 
     // Function to attach event listeners to control buttons
@@ -789,6 +795,32 @@ function checkIfAllowed() {
       }
     }
 
+    function migrateImportedData(parsedData) {
+      if (Array.isArray(parsedData)) {
+        return parsedData;
+      }
+
+      if (!parsedData || typeof parsedData !== "object") {
+        throw new Error("Invalid import payload");
+      }
+
+      const importVersion = Number(parsedData.version || 1);
+      if (importVersion === 1 && Array.isArray(parsedData.functionHistory)) {
+        return parsedData.functionHistory;
+      }
+
+      throw new Error(`Unsupported import version: ${importVersion}`);
+    }
+
+    function isValidHttpUrl(urlValue) {
+      try {
+        const parsed = new URL(urlValue);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+      } catch (e) {
+        return false;
+      }
+    }
+
     function triggerImportHistory() {
       const input = document.createElement("input");
       input.type = "file";
@@ -801,18 +833,15 @@ function checkIfAllowed() {
         try {
           const content = await file.text();
           const parsed = JSON.parse(content);
-          const importedHistory = Array.isArray(parsed)
-            ? parsed
-            : parsed.functionHistory;
-
-          if (!Array.isArray(importedHistory)) {
-            throw new Error("Invalid format");
-          }
+          const importedHistory = migrateImportedData(parsed);
 
           const normalized = importedHistory.map((item) => ({
             id: item.id || generateUniqueId(),
             name: String(item.name || ""),
-            link: item.link ? String(item.link) : null,
+            link:
+              item.link && isValidHttpUrl(String(item.link))
+                ? String(item.link)
+                : null,
             level: Number.isInteger(item.level) && item.level >= 0 ? item.level : 0,
           }));
 
